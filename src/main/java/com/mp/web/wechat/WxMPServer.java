@@ -1,4 +1,4 @@
-package com.mp.web;
+package com.mp.web.wechat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mp.dao.WechatUserDAO;
