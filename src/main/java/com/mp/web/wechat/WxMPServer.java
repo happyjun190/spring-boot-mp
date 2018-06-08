@@ -2,10 +2,15 @@ package com.mp.web.wechat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mp.dao.WechatUserDAO;
+import com.mp.web.wechat.handlers.EvtMsgHandler;
+import com.mp.web.wechat.handlers.LogHandler;
+import com.mp.web.wechat.handlers.TextMsgHandler;
+import me.chanjar.weixin.common.api.WxConsts;
 import me.chanjar.weixin.common.exception.WxErrorException;
-import me.chanjar.weixin.mp.api.WxMpConfigStorage;
-import me.chanjar.weixin.mp.api.WxMpMessageRouter;
-import me.chanjar.weixin.mp.api.WxMpService;
+import me.chanjar.weixin.mp.api.*;
+import me.chanjar.weixin.mp.api.impl.WxMpServiceHttpClientImpl;
+import me.chanjar.weixin.mp.bean.message.WxMpXmlMessage;
+import me.chanjar.weixin.mp.bean.message.WxMpXmlOutMessage;
 import me.chanjar.weixin.mp.bean.result.WxMpOAuth2AccessToken;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -27,15 +32,14 @@ import java.io.PrintWriter;
  * Created by wushenjun on 2018/6/7.
  */
 @Component
-@WebServlet("/wechat-mp")
+@WebServlet("/wx-mp")
 public class WxMPServer extends HttpServlet {
-
-    private static WxMpConfigStorage wxMpConfigStorage;
-    private static WxMpService wxMpService;
-    private static WxMpMessageRouter wxMpMessageRouter;
-
-
     Logger logger = LoggerFactory.getLogger(WxMPServer.class);
+
+    private static WxMpConfigStorage configStorage;
+    private static WxMpService wxMpService;
+    private static WxMpMessageRouter router;
+
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final long serialVersionUID = 1L;
@@ -53,6 +57,14 @@ public class WxMPServer extends HttpServlet {
             ServletContext servletContext = this.getServletContext();
             WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
             this.wechatUserDAO = (WechatUserDAO) webApplicationContext.getBean("wechatUserDAO");
+            //TODO 这个之后使用系统配置进行处理，通过util来获取
+            WxMpInMemoryConfigStorage config = new WxMpInMemoryConfigStorage();
+            config.setAppId("..."); // 设置微信公众号的appid
+            config.setSecret("..."); // 设置微信公众号的app corpSecret
+            config.setToken("..."); // 设置微信公众号的token
+            config.setAesKey("..."); // 设置微信公众号的EncodingAESKey
+            configStorage = config;
+            wxMpService = new WxMpServiceHttpClientImpl();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -94,6 +106,8 @@ public class WxMPServer extends HttpServlet {
             logger.info("WeChat check signature information signature:{}, timestamp:{}, nonce:{}, echostr:{}", signature, timestamp, nonce, echostr);
             if (wxMpService.checkSignature(signature, timestamp, nonce)) {
                 out.print(echostr);
+            } else {
+                logger.info("此处非法请求");
             }
         }
 
@@ -109,16 +123,49 @@ public class WxMPServer extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
-        // 返回消息给微信服务器
+        //返回消息给微信服务器
         PrintWriter out = response.getWriter();
-        // 获取encrypt_type 消息加解密方式标识
-        String encrypt_type = request.getParameter("encrypt_type");
-        logger.info("doPost 请求， encrypt_type:{}", encrypt_type);
+        //获取encrypt_type 消息加解密方式标识
+        String encryptType = StringUtils.isBlank(request.getParameter("encrypt_type")) ? "raw" : request.getParameter("encrypt_type");
+        logger.info("doPost 请求， encrypt_type:{}", encryptType);
 
         try {
+            //1、创建路由器
+            WxMpMessageHandler logHandler = new LogHandler();
+            WxMpMessageHandler textMsgHandler = new TextMsgHandler();
+            WxMpMessageHandler evtMsgHanlder = new EvtMsgHandler();
 
-            wxMpMessageRouter = new WxMpMessageRouter(wxMpService);
+            //2、设置路由规则
+            router = new WxMpMessageRouter(wxMpService);
+            router.rule().handler(logHandler).next()
+                  .rule().msgType(WxConsts.XmlMsgType.TEXT).handler(textMsgHandler).end()
+                  .rule().msgType(WxConsts.XmlMsgType.EVENT).handler(evtMsgHanlder).end();
 
+
+            //3、处理请求信息
+            String nonce = request.getParameter("nonce");
+            String timestamp = request.getParameter("timestamp");
+            WxMpXmlMessage message;
+            WxMpXmlOutMessage outMessage;
+
+            //3.1、处理明文请求
+            if ("raw".equals(encryptType)) {//明文传输的消息
+                message = WxMpXmlMessage.fromXml(request.getInputStream());
+                outMessage = router.route(message);
+                if (outMessage != null) {
+                    response.getWriter().write(outMessage.toXml());
+                }
+                return;
+            }
+
+            //3.2、处理aes加密请求
+            if ("aes".equals(encryptType)) {//aes加密的消息
+                String msgSignature = request.getParameter("msg_signature");
+                message = WxMpXmlMessage.fromEncryptedXml(request.getInputStream(), configStorage, timestamp, nonce, msgSignature);
+                outMessage = router.route(message);
+                response.getWriter().write(outMessage.toEncryptedXml(configStorage));
+                return;
+            }
 
         } catch (Exception e) {
             logger.error(e.toString());
