@@ -1,6 +1,6 @@
 server:
   port: 18081
-  context-path: /smarthome-api/ #统一为访问的url加上一个前缀，方便nginx路由，
+  context-path: /mp-api/ #统一为访问的url加上一个前缀，方便nginx路由，
   compression:
     enabled: true
     mime-types:
@@ -35,6 +35,15 @@ spring:
 #配置mapper文件扫描目录
 mybatis:
   mapperLocations: classpath:mapper/**/*.xml
+
+#微信配置文件
+wechat:
+  properties:
+    appId: 1
+    secret: 2
+    token: 3
+    aesKey: 4
+
 ---
 # 开发环境配置
 spring:

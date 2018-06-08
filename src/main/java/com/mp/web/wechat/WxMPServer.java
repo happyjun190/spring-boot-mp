@@ -1,7 +1,9 @@
 package com.mp.web.wechat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mp.config.SysMpProperties;
 import com.mp.dao.WechatUserDAO;
+import com.mp.util.SysMpPropUtils;
 import com.mp.web.wechat.handlers.EvtMsgHandler;
 import com.mp.web.wechat.handlers.LogHandler;
 import com.mp.web.wechat.handlers.TextMsgHandler;
@@ -57,12 +59,13 @@ public class WxMPServer extends HttpServlet {
             ServletContext servletContext = this.getServletContext();
             WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
             this.wechatUserDAO = (WechatUserDAO) webApplicationContext.getBean("wechatUserDAO");
+            logger.info("##################################### appId:{}", SysMpPropUtils.getAppId());
             //TODO 这个之后使用系统配置进行处理，通过util来获取
             WxMpInMemoryConfigStorage config = new WxMpInMemoryConfigStorage();
-            config.setAppId("..."); // 设置微信公众号的appid
-            config.setSecret("..."); // 设置微信公众号的app corpSecret
-            config.setToken("..."); // 设置微信公众号的token
-            config.setAesKey("..."); // 设置微信公众号的EncodingAESKey
+            config.setAppId(SysMpPropUtils.getAppId()); // 设置微信公众号的appid
+            config.setSecret(SysMpPropUtils.getSecret()); // 设置微信公众号的app corpSecret
+            config.setToken(SysMpPropUtils.getToken()); // 设置微信公众号的token
+            config.setAesKey(SysMpPropUtils.getAesKey()); // 设置微信公众号的EncodingAESKey
             configStorage = config;
             wxMpService = new WxMpServiceHttpClientImpl();
         } catch (Exception e) {
