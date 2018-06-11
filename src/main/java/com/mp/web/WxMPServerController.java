@@ -1,15 +1,13 @@
 package com.mp.web;
 
+import com.mp.util.SysMpPropUtils;
 import com.mp.web.wechat.handlers.EvtMsgHandler;
 import com.mp.web.wechat.handlers.LogHandler;
 import com.mp.web.wechat.handlers.TextMsgHandler;
 import io.swagger.annotations.ApiOperation;
 import me.chanjar.weixin.common.api.WxConsts;
 import me.chanjar.weixin.common.exception.WxErrorException;
-import me.chanjar.weixin.mp.api.WxMpConfigStorage;
-import me.chanjar.weixin.mp.api.WxMpMessageHandler;
-import me.chanjar.weixin.mp.api.WxMpMessageRouter;
-import me.chanjar.weixin.mp.api.WxMpService;
+import me.chanjar.weixin.mp.api.*;
 import me.chanjar.weixin.mp.api.impl.WxMpServiceHttpClientImpl;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlMessage;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlOutMessage;
@@ -32,12 +30,30 @@ import java.io.PrintWriter;
  */
 @RestController
 public class WxMPServerController {
-
-    Logger logger = LoggerFactory.getLogger(WxMPServerController.class);
-
-    private static WxMpConfigStorage configStorage;
+    //日志打印，便于调试
+    private static final Logger logger = LoggerFactory.getLogger(WxMPServerController.class);
+    //对微信接口统一的调用处理
     private static WxMpService wxMpService = new WxMpServiceHttpClientImpl();
+
     private static WxMpMessageRouter router;
+
+    private static WxMpConfigStorage configStorage = null;
+
+    //初始化数据
+    private static WxMpConfigStorage getWxMpConfigInstance() {
+        //不用考虑多线程，只需要处理一次就可以
+        if(configStorage==null) {
+            logger.info("configStorage:{}", configStorage);
+            WxMpInMemoryConfigStorage config = new WxMpInMemoryConfigStorage();
+            config.setAppId(SysMpPropUtils.getAppId()); // 设置微信公众号的appid
+            config.setSecret(SysMpPropUtils.getSecret()); // 设置微信公众号的app corpSecret
+            config.setToken(SysMpPropUtils.getToken()); // 设置微信公众号的token
+            config.setAesKey(SysMpPropUtils.getAesKey()); // 设置微信公众号的EncodingAESKey
+            configStorage = config;
+        }
+        return configStorage;
+    }
+
 
 
     /**
@@ -123,6 +139,8 @@ public class WxMPServerController {
             WxMpXmlMessage message;
             WxMpXmlOutMessage outMessage;
 
+            configStorage = getWxMpConfigInstance();
+            logger.info("configStorage:{}", configStorage.getAesKey());
             //3.1、处理明文请求
             if ("raw".equals(encryptType)) {//明文传输的消息
                 message = WxMpXmlMessage.fromXml(request.getInputStream());
