@@ -39,22 +39,6 @@ public class WxMPServerController {
 
     private static WxMpConfigStorage configStorage = null;
 
-    //初始化数据
-    private static WxMpConfigStorage getWxMpConfigInstance() {
-        //不用考虑多线程，只需要处理一次就可以
-        if(configStorage==null) {
-            logger.info("configStorage:{}", configStorage);
-            WxMpInMemoryConfigStorage config = new WxMpInMemoryConfigStorage();
-            config.setAppId(SysMpPropUtils.getAppId()); // 设置微信公众号的appid
-            config.setSecret(SysMpPropUtils.getSecret()); // 设置微信公众号的app corpSecret
-            config.setToken(SysMpPropUtils.getToken()); // 设置微信公众号的token
-            config.setAesKey(SysMpPropUtils.getAesKey()); // 设置微信公众号的EncodingAESKey
-            configStorage = config;
-        }
-        return configStorage;
-    }
-
-
 
     /**
      * get请求:校验服务器有效性，以及oAuth验证
@@ -129,8 +113,8 @@ public class WxMPServerController {
             //2、设置路由规则
             router = new WxMpMessageRouter(wxMpService);
             router.rule().handler(logHandler).next()
-                    .rule().msgType(WxConsts.XmlMsgType.TEXT).handler(textMsgHandler).end()
-                    .rule().msgType(WxConsts.XmlMsgType.EVENT).handler(evtMsgHanlder).end();
+                  .rule().msgType(WxConsts.XmlMsgType.TEXT).handler(textMsgHandler).end()
+                  .rule().msgType(WxConsts.XmlMsgType.EVENT).handler(evtMsgHanlder).end();
 
 
             //3、处理请求信息
@@ -166,5 +150,22 @@ public class WxMPServerController {
             out.close();
         }
     }
+
+
+    //初始化微信配置的数据
+    private static WxMpConfigStorage getWxMpConfigInstance() {
+        //不用考虑锁的问题，只需要处理一次就可以
+        if(configStorage==null) {
+            logger.info("configStorage:{}", configStorage);
+            WxMpInMemoryConfigStorage config = new WxMpInMemoryConfigStorage();
+            config.setAppId(SysMpPropUtils.getAppId()); // 设置微信公众号的appid
+            config.setSecret(SysMpPropUtils.getSecret()); // 设置微信公众号的app corpSecret
+            config.setToken(SysMpPropUtils.getToken()); // 设置微信公众号的token
+            config.setAesKey(SysMpPropUtils.getAesKey()); // 设置微信公众号的EncodingAESKey
+            configStorage = config;
+        }
+        return configStorage;
+    }
+
 
 }
