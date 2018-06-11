@@ -1,16 +1,15 @@
-/*
-package com.mp.web.wechat;
+package com.mp.web;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mp.config.SysMpProperties;
-import com.mp.dao.WechatUserDAO;
-import com.mp.util.SysMpPropUtils;
 import com.mp.web.wechat.handlers.EvtMsgHandler;
 import com.mp.web.wechat.handlers.LogHandler;
 import com.mp.web.wechat.handlers.TextMsgHandler;
+import io.swagger.annotations.ApiOperation;
 import me.chanjar.weixin.common.api.WxConsts;
 import me.chanjar.weixin.common.exception.WxErrorException;
-import me.chanjar.weixin.mp.api.*;
+import me.chanjar.weixin.mp.api.WxMpConfigStorage;
+import me.chanjar.weixin.mp.api.WxMpMessageHandler;
+import me.chanjar.weixin.mp.api.WxMpMessageRouter;
+import me.chanjar.weixin.mp.api.WxMpService;
 import me.chanjar.weixin.mp.api.impl.WxMpServiceHttpClientImpl;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlMessage;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlOutMessage;
@@ -18,76 +17,39 @@ import me.chanjar.weixin.mp.bean.result.WxMpOAuth2AccessToken;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-*/
 /**
- * Created by wushenjun on 2018/6/7.
- *//*
+ * Created by wushenjun on 2018/6/11.
+ */
+@RestController
+public class WxMPServerController {
 
-//@Component
-//@WebServlet("/wx-mp")
-public class WxMPServer extends HttpServlet {
-    Logger logger = LoggerFactory.getLogger(WxMPServer.class);
+    Logger logger = LoggerFactory.getLogger(WxMPServerController.class);
 
     private static WxMpConfigStorage configStorage;
-    private static WxMpService wxMpService;
+    private static WxMpService wxMpService = new WxMpServiceHttpClientImpl();
     private static WxMpMessageRouter router;
 
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    private static final long serialVersionUID = 1L;
-    // 实例化 统一业务API入口
-
-    private WechatUserDAO wechatUserDAO;
-
-    */
-/**
-     * servlet 无法通过@Autowired等方式注入bean，只好通过servlet生命周期开始时(init方式)，注入需要的bean
-     * @throws ServletException
-     *//*
-
-    @Override
-    public void init() throws ServletException {
-        try {
-            ServletContext servletContext = this.getServletContext();
-            WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
-            this.wechatUserDAO = (WechatUserDAO) webApplicationContext.getBean("wechatUserDAO");
-            logger.info("##################################### appId:{}", SysMpPropUtils.getAppId());
-            //TODO 这个之后使用系统配置进行处理，通过util来获取
-            WxMpInMemoryConfigStorage config = new WxMpInMemoryConfigStorage();
-            config.setAppId(SysMpPropUtils.getAppId()); // 设置微信公众号的appid
-            config.setSecret(SysMpPropUtils.getSecret()); // 设置微信公众号的app corpSecret
-            config.setToken(SysMpPropUtils.getToken()); // 设置微信公众号的token
-            config.setAesKey(SysMpPropUtils.getAesKey()); // 设置微信公众号的EncodingAESKey
-            configStorage = config;
-            wxMpService = new WxMpServiceHttpClientImpl();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    */
-/**
-     * get请求:校验服务器有效性
+    /**
+     * get请求:校验服务器有效性，以及oAuth验证
      * @param request
      * @param response
      * @throws ServletException
      * @throws IOException
-     *//*
-
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+     */
+    @ApiOperation(value = "wechat get请求:校验服务器有效性，以及oAuth验证", tags="wushenjun", notes = "wechat get请求")
+    @RequestMapping(value = "/wx-mp", method = RequestMethod.GET)
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         //验证是否是跳转链接过来
@@ -123,16 +85,17 @@ public class WxMPServer extends HttpServlet {
 
     }
 
-    */
-/**
-     * post请求
+
+    /**
+     * post请求，用于处理微信的一些交互请求
      * @param request
      * @param response
      * @throws ServletException
      * @throws IOException
-     *//*
-
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+     */
+    @ApiOperation(value = "post请求，用于处理微信的一些交互请求", tags="wushenjun", notes = "wechat post请求")
+    @RequestMapping(value = "/wx-mp", method = RequestMethod.POST)
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
         //返回消息给微信服务器
@@ -150,8 +113,8 @@ public class WxMPServer extends HttpServlet {
             //2、设置路由规则
             router = new WxMpMessageRouter(wxMpService);
             router.rule().handler(logHandler).next()
-                  .rule().msgType(WxConsts.XmlMsgType.TEXT).handler(textMsgHandler).end()
-                  .rule().msgType(WxConsts.XmlMsgType.EVENT).handler(evtMsgHanlder).end();
+                    .rule().msgType(WxConsts.XmlMsgType.TEXT).handler(textMsgHandler).end()
+                    .rule().msgType(WxConsts.XmlMsgType.EVENT).handler(evtMsgHanlder).end();
 
 
             //3、处理请求信息
@@ -187,4 +150,3 @@ public class WxMPServer extends HttpServlet {
     }
 
 }
-*/

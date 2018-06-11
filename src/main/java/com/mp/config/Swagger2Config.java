@@ -23,15 +23,15 @@ public class Swagger2Config {
                 .apiInfo(buildApiInf())
                 //.host("localhost:8080")
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("com.smarthome.web.controller"))//controller路径
+                .apis(RequestHandlerSelectors.basePackage("com.mp.web"))//controller路径
                 .paths(PathSelectors.any())
                 .build();
     }
 
     private ApiInfo buildApiInf() {
         return new ApiInfoBuilder()
-                .title("smart home api details")
-                .description("API文档详细描述：智能家居项目接口文档")
+                .title("wechat mp api details")
+                .description("API文档详细描述：微信公众号接口文档")
                 .termsOfServiceUrl("http://www.github.com/kongchen/swagger-maven-plugin")
                 .build();
     }
