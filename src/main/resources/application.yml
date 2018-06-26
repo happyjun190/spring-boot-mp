@@ -1,6 +1,6 @@
 server:
   port: 18081
-  context-path: /smarthome-api/ #统一为访问的url加上一个前缀，方便nginx路由，
+  context-path: /mp-api/ #统一为访问的url加上一个前缀，方便nginx路由，
   compression:
     enabled: true
     mime-types:

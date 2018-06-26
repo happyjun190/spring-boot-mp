@@ -14,7 +14,7 @@
 
 
     <properties>
-        <start-class>com.mp.SpringBootMPApplication</start-class><!-- 指定启动类（main方法的位置） -->
+        <start-class>com.healtt.SpringBootMPApplication</start-class><!-- 指定启动类（main方法的位置） -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
@@ -154,7 +154,7 @@
 
     <!--配置 编译 打包方式-->
     <build>
-        <finalName>smarthome</finalName><!-- 指定package生成的文件名为leji-mall.jar -->
+        <finalName>spring-boot-mp</finalName><!-- 指定package生成的文件名为leji-mall.jar -->
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
