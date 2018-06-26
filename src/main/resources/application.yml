@@ -35,6 +35,15 @@ spring:
 #配置mapper文件扫描目录
 mybatis:
   mapperLocations: classpath:mapper/**/*.xml
+
+#微信配置文件
+wechat:
+  properties:
+    appId: 1
+    secret: 2
+    token: 3
+    aesKey: 4
+
 ---
 # 开发环境配置
 spring:

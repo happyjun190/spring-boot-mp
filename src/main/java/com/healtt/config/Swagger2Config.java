@@ -1,4 +1,4 @@
-package com.healtt.config;
+package com.mp.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +24,7 @@ public class Swagger2Config {
                 //.host("localhost:8080")
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.healtt.web.controller"))//controller路径
+                .apis(RequestHandlerSelectors.basePackage("com.mp.web"))//controller路径
                 .paths(PathSelectors.any())
                 .build();
     }
@@ -31,6 +32,8 @@ public class Swagger2Config {
     private ApiInfo buildApiInf() {
         return new ApiInfoBuilder()
                 .title("spring boot mp api details")
+                .description("API文档详细描述：微信公众号接口文档")
+                .title("wechat mp api details")
                 .description("API文档详细描述：微信公众号接口文档")
                 .termsOfServiceUrl("http://www.github.com/kongchen/swagger-maven-plugin")
                 .build();
