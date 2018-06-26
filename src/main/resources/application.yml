@@ -1,5 +1,5 @@
 server:
-  port: 18081
+  port: 63080
   context-path: /mp-api/ #统一为访问的url加上一个前缀，方便nginx路由，
   compression:
     enabled: true
@@ -11,7 +11,7 @@ server:
       - application/javascript
 #服务监控用
 management:
-  port: 18089
+  port: 63088
   security:
     enabled: false
 info:
